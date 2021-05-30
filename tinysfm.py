@@ -43,7 +43,7 @@ for i in range(len(fnames)):
     Rt[:, 3] = Rt_prev[:, 3] + Rt_prev[:, :3] @ t.ravel()  # Update translation params
     P = K @ Rt  # Derive projection matrix for triangulation
     pts_3d = cv2.triangulatePoints(P_prev, P, pts_prev.T, pts.T)  # Find 3D coords from 2D points
-    pts_3d = cv2.convertPointsFromHomogeneous(pts_3d.T)[:, 0, :].T  # Homogenous (4D) -> Euclidean (3D)
+    pts_3d = cv2.convertPointsFromHomogeneous(pts_3d.T)[:, 0, :].T  # Homogenous (4D) -> Cartesian (3D)
     pt_cld = np.concatenate([pt_cld, pts_3d], axis=-1)  # Add 3D points to point cloud
     P_prev, Rt_prev, kp_prev, desc_prev = np.copy(P), np.copy(Rt), kp, desc  # Updates for next iteration
 
