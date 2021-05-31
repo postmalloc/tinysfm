@@ -32,8 +32,6 @@ It creates a 3D reconstruction from the images in the directory.
 
 _Note: TinySFM assumes the photos in directory are named in the order in which they are captured as you move around the subject. Unordered names will affect the quality of reconstruction._
 
-## References
-Hartley, R. and Zisserman, A., Multiple View Geometry in Computer Vision (2004)
 
 ## License
 MIT

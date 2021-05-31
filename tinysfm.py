@@ -16,6 +16,16 @@ P_prev = K @ Rt_prev  # Init projection matrix for current frame
 P = np.zeros((3, 4))  # Init projection matrix for next frame
 pt_cld = np.empty((3, 1))
 
+
+def lowes_filter(matches, kp1, kp2, thresh=0.8):
+    pts1, pts2 = [], []
+    for m in matches:
+        if m[0].distance / m[1].distance < thresh:
+            pts1.append(kp1[m[0].queryIdx].pt)
+            pts2.append(kp2[m[0].trainIdx].pt)
+    return np.array(pts1), np.array(pts2)
+
+
 for i in range(len(fnames)):
     img = cv2.imread(fnames[i])
     det = cv2.xfeatures2d.SIFT_create()  # Init SIFT detector
@@ -26,13 +36,7 @@ for i in range(len(fnames)):
 
     matcher = cv2.BFMatcher_create()  # Use a simple bruteforce matcher
     matches = matcher.knnMatch(desc_prev, desc, k=2)  # Get top 2 matches for Lowe's test
-    pts_prev, pts = [], []
-    for m in matches:
-        a, b = m[0], m[1]
-        if a.distance / b.distance < 0.80:  # Lowe's ratio test
-            pts_prev.append(kp_prev[a.queryIdx].pt)
-            pts.append(kp[a.trainIdx].pt)
-    pts_prev, pts = np.array(pts_prev), np.array(pts)
+    pts_prev, pts = lowes_filter(matches, kp_prev, kp)
     F, mask = cv2.findFundamentalMat(pts_prev, pts, cv2.RANSAC)  # Fundamental Matrix for the two frames
     mask = mask.ravel() == 1
     pts_prev, pts = pts_prev[mask], pts[mask]  # Exploit Epipolar constraint and keep only useful points
@@ -43,7 +47,7 @@ for i in range(len(fnames)):
     Rt[:, 3] = Rt_prev[:, 3] + Rt_prev[:, :3] @ t.ravel()  # Update translation params
     P = K @ Rt  # Derive projection matrix for triangulation
     pts_3d = cv2.triangulatePoints(P_prev, P, pts_prev.T, pts.T)  # Find 3D coords from 2D points
-    pts_3d = cv2.convertPointsFromHomogeneous(pts_3d.T)[:, 0, :].T  # Homogenous (4D) -> Cartesian (3D)
+    pts_3d = cv2.convertPointsFromHomogeneous(pts_3d.T)[:, 0, :].T  # Homogenous (4D) -> Euclidean (3D)
     pt_cld = np.concatenate([pt_cld, pts_3d], axis=-1)  # Add 3D points to point cloud
     P_prev, Rt_prev, kp_prev, desc_prev = np.copy(P), np.copy(Rt), kp, desc  # Updates for next iteration
 
